@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Vintage Finder</title>
+    <meta name="description" content="複数の古着屋・セレクトショップの商品を横断して一覧できるサイト">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400&family=Inter:wght@300;400&display=swap');
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',-apple-system,sans-serif;background:#F8F7F4;color:#1A1816;font-weight:300;letter-spacing:.3px}
+        .header{background:#FFFEF9;border-bottom:1px solid #E8E6E0;position:sticky;top:0;z-index:100}
+        .header-content{max-width:1400px;margin:0 auto;padding:2rem 3rem;display:flex;justify-content:space-between;align-items:center}
+        .logo{font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:400;letter-spacing:1px}
+        .add-btn{padding:.875rem 2rem;background:#1A1816;color:#FFFEF9;border:none;font-weight:300;cursor:pointer;font-size:.875rem;letter-spacing:1px;text-transform:uppercase}
+        .add-btn:hover{background:#3A3836}
+        .main{max-width:1400px;margin:0 auto;padding:3rem}
+        .modal{display:none;position:fixed;inset:0;background:rgba(26,24,22,.75);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:2rem}
+        .modal.active{display:flex}
+        .modal-content{background:#FFFEF9;padding:3rem;max-width:460px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.15)}
+        .modal-title{font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:400;margin-bottom:2rem}
+        .form-group{margin-bottom:1.5rem}
+        .form-label{display:block;font-weight:400;margin-bottom:.5rem;font-size:.75rem;letter-spacing:.5px;text-transform:uppercase}
+        .form-input{width:100%;padding:.875rem;border:1px solid #E8E6E0;background:#FFFEF9;font-size:.875rem;font-family:'Inter',sans-serif;font-weight:300}
+        .form-input:focus{outline:none;border-color:#1A1816}
+        .form-input:disabled{color:#6B6866;background:#F8F7F4}
+        .form-hint{font-size:.72rem;color:#6B6866;margin-top:.375rem;line-height:1.5}
+        .btn-primary{width:100%;padding:1rem;background:#1A1816;color:#FFFEF9;border:none;font-weight:300;cursor:pointer;font-size:.813rem;letter-spacing:1px;text-transform:uppercase}
+        .btn-primary:hover{background:#3A3836}
+        .btn-secondary{width:100%;padding:1rem;background:transparent;color:#6B6866;border:1px solid #E8E6E0;font-weight:300;cursor:pointer;margin-top:.5rem;font-size:.813rem;letter-spacing:1px;text-transform:uppercase}
+        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(120%);background:#1A1816;color:#FFFEF9;padding:1rem 2rem;font-size:.8rem;font-weight:300;letter-spacing:.3px;z-index:2000;opacity:0;transition:all .4s cubic-bezier(.4,0,.2,1);max-width:420px;text-align:center;line-height:1.5}
+        .toast.error{background:#4A2020}
+        .toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+        .shops-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid #E8E6E0}
+        .shops-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:400}
+        .shops-actions{display:flex;gap:.75rem}
+        .shops-actions button{padding:.5rem 1rem;background:transparent;border:1px solid #E8E6E0;font-size:.75rem;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;color:#6B6866;font-weight:300}
+        .shops-actions button:hover{border-color:#1A1816;color:#1A1816}
+        .shops-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;margin:3rem 0}
+        .shop-card{background:#FFFEF9;padding:2rem;cursor:pointer;border:1px solid transparent;position:relative;transition:all .2s}
+        .shop-card:hover{border-color:#1A1816}
+        .shop-card.selected{background:#1A1816;color:#FFFEF9}
+        .shop-delete{position:absolute;top:1rem;right:1rem;width:28px;height:28px;background:rgba(26,24,22,.08);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#6B6866;opacity:0;transition:opacity .2s}
+        .shop-card:hover .shop-delete{opacity:1}
+        .shop-card.selected .shop-delete{background:rgba(255,254,249,.15);color:#FFFEF9}
+        .shop-card-name{font-size:1.125rem;font-weight:400;margin-bottom:.5rem;letter-spacing:.5px;padding-right:2.5rem}
+        .shop-card-url{font-size:.75rem;color:#6B6866;margin-bottom:1rem}
+        .shop-card.selected .shop-card-url{color:#C8C6C0}
+        .shop-card-stats{display:flex;gap:2rem;padding-top:1rem;border-top:1px solid #E8E6E0;font-size:.813rem;color:#6B6866}
+        .shop-card.selected .shop-card-stats{border-top-color:#3A3836;color:#C8C6C0}
+        .shop-stat-value{font-weight:400;color:#1A1816}
+        .shop-card.selected .shop-stat-value{color:#FFFEF9}
+        .filter-container{position:sticky;top:90px;z-index:50;margin-bottom:3rem}
+        .filter-section{background:rgba(255,254,249,.95);backdrop-filter:blur(10px);padding:1rem 2rem;border:1px solid #E8E6E0;display:flex;align-items:center;gap:2rem;flex-wrap:wrap}
+        .filter-group{display:flex;align-items:center;gap:.75rem}
+        .filter-label{font-size:.75rem;color:#6B6866;letter-spacing:.5px;text-transform:uppercase}
+        .filter-select{padding:.5rem .75rem;border:1px solid #E8E6E0;background:#FFFEF9;font-size:.75rem;color:#1A1816;font-weight:300;cursor:pointer}
+        .checkbox-wrapper{display:flex;align-items:center;gap:.5rem;cursor:pointer}
+        .checkbox-wrapper input{width:16px;height:16px;cursor:pointer;accent-color:#1A1816}
+        .checkbox-wrapper label{font-size:.75rem;color:#6B6866;cursor:pointer}
+        .search-input{padding:.5rem .75rem;border:1px solid #E8E6E0;background:#FFFEF9;font-size:.75rem;font-weight:300;width:180px}
+        .search-input:focus{outline:none;border-color:#1A1816}
+        .items-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2.5rem;margin-bottom:3rem}
+        .item-card{position:relative;background:#FFFEF9;overflow:hidden;cursor:pointer;aspect-ratio:1;transition:transform .4s cubic-bezier(.4,0,.2,1)}
+        .item-card:hover{transform:translateY(-8px)}
+        .item-image{width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.4,0,.2,1);background:#E8E6E0}
+        .item-card.sold-out .item-image{filter:grayscale(100%) brightness(1.1);opacity:.5}
+        .item-card:hover .item-image{transform:scale(1.08)}
+        .sold-out-badge{position:absolute;top:1.5rem;right:1.5rem;background:rgba(26,24,22,.9);color:#FFFEF9;padding:.5rem 1rem;font-size:.75rem;letter-spacing:1px;text-transform:uppercase;z-index:2}
+        .item-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(26,24,22,.95) 0%,rgba(26,24,22,.7) 50%,transparent 100%);padding:2.5rem 2rem 2rem;transform:translateY(100%);transition:transform .4s cubic-bezier(.4,0,.2,1)}
+        .item-card:hover .item-overlay{transform:translateY(0)}
+        .shop-badge{color:rgba(255,254,249,.7);font-size:.688rem;font-weight:300;margin-bottom:.75rem;letter-spacing:1px;text-transform:uppercase}
+        .item-title{font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:400;color:#FFFEF9;margin-bottom:1rem;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .price-area{display:flex;align-items:baseline;gap:.75rem;flex-wrap:wrap}
+        .price{font-size:1.75rem;font-weight:300;color:#FFFEF9;letter-spacing:.5px}
+        .original-price{color:rgba(255,254,249,.5);text-decoration:line-through;font-size:.875rem}
+        .sale-badge{background:#FFFEF9;color:#1A1816;padding:.25rem .625rem;font-size:.688rem;font-weight:400}
+        .back-to-top{position:fixed;bottom:2rem;right:2rem;width:56px;height:56px;background:#1A1816;color:#FFFEF9;border:none;cursor:pointer;opacity:0;visibility:hidden;transition:all .3s;display:flex;align-items:center;justify-content:center;font-size:1.5rem;z-index:99}
+        .back-to-top.visible{opacity:1;visibility:visible}
+        .empty-state{text-align:center;padding:6rem 2rem}
+        .empty-state-icon{font-size:4rem;margin-bottom:2rem;opacity:.3}
+        .empty-state-title{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;margin-bottom:1rem}
+        .empty-state-text{font-size:1rem;font-weight:300;color:#6B6866}
+        @media(max-width:768px){
+            body{-webkit-tap-highlight-color:transparent}
+            .header-content{padding:1.25rem 1.5rem}
+            .logo{font-size:1.25rem}
+            .add-btn{padding:.65rem 1.25rem;font-size:.75rem}
+            .main{padding:1.5rem}
+            .shops-grid{grid-template-columns:1fr;gap:1rem}
+            .shop-card{padding:1.5rem}
+            .shop-card .shop-delete{opacity:1}
+            .items-grid{grid-template-columns:1fr;gap:1.5rem}
+            .item-overlay{transform:translateY(0)}
+            .filter-section{padding:.75rem 1rem;gap:.75rem}
+            .filter-container{top:65px}
+            .search-input{width:100%}
+            .modal-content{padding:2rem 1.5rem}
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <span class="logo">Vintage Finder</span>
+            <button class="add-btn" onclick="openModal()">+ Add Store</button>
+        </div>
+    </header>
+
+    <main class="main">
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-title">Add Store</div>
+                <div class="form-group">
+                    <label class="form-label">Store Name</label>
+                    <input id="storeNameInput" class="form-input" placeholder="e.g. Iggy Store">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">URL</label>
+                    <input id="storeUrlDisplay" class="form-input" disabled>
+                    <p class="form-hint">URL is auto-generated from the store name.</p>
+                </div>
+                <button class="btn-primary" onclick="addStore()">Add Store</button>
+                <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+
+        <div id="shopsSection" style="display:none">
+            <div class="shops-header">
+                <div class="shops-title">Your Shops</div>
+                <div class="shops-actions">
+                    <button onclick="selectAll()">Select All</button>
+                    <button onclick="clearSelection()">Clear</button>
+                </div>
+            </div>
+            <div class="shops-grid" id="shops"></div>
+        </div>
+
+        <div class="filter-container" id="filterContainer" style="display:none">
+            <div class="filter-section">
+                <div class="filter-group">
+                    <span class="filter-label">Sort</span>
+                    <select class="filter-select" id="sortSelect" onchange="applySort()">
+                        <option value="">Default</option>
+                        <option value="asc">Price ↑</option>
+                        <option value="desc">Price ↓</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <select class="filter-select" id="filterSelect" onchange="applyFilter()">
+                        <option value="">All</option>
+                        <option value="stock">In Stock Only</option>
+                        <option value="sale">Sale Only</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="hideSoldOut" onchange="toggleSoldOut()">
+                        <label for="hideSoldOut">Hide Sold Out</label>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search..." oninput="renderProducts()">
+                </div>
+                <div id="itemsCount" style="margin-left:auto;font-size:.75rem;color:#6B6866"></div>
+            </div>
+        </div>
+
+        <div class="items-grid" id="items"></div>
+
+        <div id="emptyState" class="empty-state">
+            <div class="empty-state-icon">◇</div>
+            <h3 class="empty-state-title">Begin Your Collection</h3>
+            <p class="empty-state-text">Add your first vintage store to start browsing</p>
+        </div>
+    </main>
+
+    <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+    <div id="toast" class="toast"></div>
+
+    <script>
+    // ── Store image: 1 store = 1 fixed image ──
+    const STORE_IMAGES = {};
+    let imgSeed = 200;
+    function storeImg(id) {
+        if (!STORE_IMAGES[id]) STORE_IMAGES[id] = `https://picsum.photos/seed/vf${imgSeed++}/600/600`;
+        return STORE_IMAGES[id];
+    }
+
+    // ── Vintage item names pool ──
+    const ITEMS = [
+        "1960s US Army M-51 Field Jacket","Vintage Levi's 501 Big E Selvedge","70s Champion Reverse Weave Sweat",
+        "1940s USMC P-41 HBT Utility Jacket","Barbour Beaufort Waxed Jacket","80s Patagonia Snap-T Fleece",
+        "60s Pendleton Board Shirt","50s French Army M-47 Cargo Pants","90s Polo Ralph Lauren Sport Fleece",
+        "70s Lee 200 Westerner Jacket","80s L.L.Bean Norwegian Sweater","1930s French Indigo Linen Smock",
+        "80s Comme des Garçons Deconstructed Coat","50s US Army OG-107 Fatigue Pants","90s ISSEY MIYAKE Pleats Please Top",
+        "70s adidas Beckenbauer Track Jacket","40s French Moleskin Work Jacket","80s Yohji Yamamoto Pour Homme Blazer",
+        "90s The North Face Nuptse Down","60s Brooks Brothers OCBD Shirt","70s Wrangler Wrancher Dress Pants",
+        "50s Deadstock Swedish Army Pullover","90s Nike ACG Storm-FIT Jacket","1950s Buco J-100 Horsehide Riders",
+        "40s US Navy N-1 Deck Jacket","90s Stüssy Big Logo Hoodie","60s British Army DPM Combat Smock",
+        "70s Hanes Beefy-T Plain White","80s Filson Mackinaw Cruiser","2000s Maison Margiela Artisanal Blazer"
+    ];
+    const PRICES = [8800,12000,15400,18000,22000,24000,24200,24500,28000,32000,33000,35000,38000,42000,45000,48000,52000,55000,68000,72000,78000,85000,95000,120000,128000];
+
+    function genProducts(shopId, n) {
+        const arr = [], shuffled = [...ITEMS].sort(() => Math.random() - .5), img = storeImg(shopId);
+        for (let i = 0; i < Math.min(n, shuffled.length); i++) {
+            const pr = PRICES[Math.floor(Math.random()*PRICES.length)];
+            const sale = Math.random() < .18, sold = Math.random() < .15;
+            arr.push({
+                shopId, title: shuffled[i], price: pr,
+                comparePrice: sale ? Math.round(pr / (1 - (Math.random()*.2+.2))) : 0,
+                available: !sold, image: img, url: "#"
+            });
+        }
+        return arr;
+    }
+
+    // ── State ──
+    let shops = [], allProducts = [], filteredProducts = [], selectedShopIds = new Set(), hideSoldOutItems = false, nextId = 10;
+
+    // ── Initial 3 shops: 60-80s trio first names ──
+    function init() {
+        [{id:1,name:"Darby Store",url:"darbystore.com"},{id:2,name:"Siouxsie Store",url:"siouxsiestore.com"},{id:3,name:"Patti Store",url:"pattistore.com"}]
+        .forEach(s => {
+            shops.push({...s, platform:"Shopify"});
+            selectedShopIds.add(s.id);
+            allProducts.push(...genProducts(s.id, 12));
+        });
+        filteredProducts = [...allProducts];
+        render();
+    }
+
+    // ── Toast ──
+    let tt;
+    function toast(msg, err) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast' + (err?' error':'') + ' visible';
+        clearTimeout(tt);
+        tt = setTimeout(() => t.classList.remove('visible'), 3200);
+    }
+
+    // ── Modal ──
+    function openModal() {
+        document.getElementById('modal').classList.add('active');
+        const inp = document.getElementById('storeNameInput');
+        inp.value = '';
+        document.getElementById('storeUrlDisplay').value = '';
+        setTimeout(() => inp.focus(), 100);
+    }
+    function closeModal() { document.getElementById('modal').classList.remove('active'); }
+
+    document.addEventListener('input', e => {
+        if (e.target.id !== 'storeNameInput') return;
+        const v = e.target.value.trim();
+        const slug = v.toLowerCase().replace(/[^a-z0-9]+/g,'');
+        document.getElementById('storeUrlDisplay').value = slug ? slug + '.com' : '';
+    });
+
+    function addStore() {
+        const name = document.getElementById('storeNameInput').value.trim();
+        if (!name) { toast('Enter a store name to continue.', true); return; }
+        if (!/[a-zA-Z]/.test(name)) { toast('Store name needs at least one letter.', true); return; }
+        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g,'');
+        if (!slug) { toast('Hmm, couldn\'t make a URL from that name.', true); return; }
+        const url = slug + '.com';
+        if (shops.some(s => s.url === url)) { toast('That store is already in your list.', true); return; }
+
+        const id = nextId++;
+        shops.push({id, name, url, platform:'Shopify'});
+        selectedShopIds.add(id);
+        const prods = genProducts(id, 10 + Math.floor(Math.random()*6));
+        allProducts.push(...prods);
+        filteredProducts = allProducts.filter(p => selectedShopIds.has(p.shopId));
+        closeModal(); render();
+        toast(`${name} added — ${prods.length} items loaded.`);
+    }
+
+    function deleteShop(ev, id) {
+        ev.stopPropagation();
+        const s = shops.find(x => x.id===id);
+        shops = shops.filter(x => x.id!==id);
+        allProducts = allProducts.filter(p => p.shopId!==id);
+        selectedShopIds.delete(id);
+        filteredProducts = selectedShopIds.size>0 ? allProducts.filter(p=>selectedShopIds.has(p.shopId)) : [];
+        render();
+        if (s) toast(`${s.name} removed.`);
+    }
+
+    // ── Render ──
+    function render() {
+        const has = shops.length > 0;
+        document.getElementById('emptyState').style.display = has?'none':'block';
+        document.getElementById('shopsSection').style.display = has?'block':'none';
+        document.getElementById('filterContainer').style.display = has && allProducts.length>0?'block':'none';
+
+        document.getElementById('shops').innerHTML = shops.map(s => {
+            const sp = allProducts.filter(p=>p.shopId===s.id);
+            const inS = sp.filter(p=>p.available).length, sold = sp.length-inS;
+            const avg = sp.length>0 ? sp.reduce((a,p)=>a+p.price,0)/sp.length : 0;
+            const sel = selectedShopIds.has(s.id);
+            return `<div class="shop-card ${sel?'selected':''}" onclick="toggleShop(${s.id})">
+                <button class="shop-delete" onclick="deleteShop(event,${s.id})" title="Remove">✕</button>
+                <div class="shop-card-name">${s.name}</div>
+                <div class="shop-card-url">${s.url} <span style="opacity:.5">· ${s.platform}</span></div>
+                <div class="shop-card-stats">
+                    <div><span class="shop-stat-value">${inS}</span> in stock</div>
+                    <div><span class="shop-stat-value" style="opacity:.5">${sold}</span> sold</div>
+                    <div>avg <span class="shop-stat-value">¥${Math.round(avg).toLocaleString()}</span></div>
+                </div></div>`;
+        }).join('');
+        renderProducts();
+    }
+
+    function toggleShop(id) {
+        if (selectedShopIds.has(id)) selectedShopIds.delete(id); else selectedShopIds.add(id);
+        filteredProducts = selectedShopIds.size>0 ? allProducts.filter(p=>selectedShopIds.has(p.shopId)) : [];
+        render();
+    }
+    function clearSelection() { selectedShopIds.clear(); filteredProducts=[]; render(); }
+    function selectAll() { shops.forEach(s=>selectedShopIds.add(s.id)); filteredProducts=[...allProducts]; render(); }
+
+    function renderProducts() {
+        const el = document.getElementById('items'), cnt = document.getElementById('itemsCount');
+        const q = (document.getElementById('searchInput')?.value||'').toLowerCase().trim();
+        let d = [...filteredProducts];
+        if (hideSoldOutItems) d = d.filter(p=>p.available);
+        if (q) d = d.filter(p=>p.title.toLowerCase().includes(q));
+        const sc = shops.filter(s=>selectedShopIds.has(s.id)).length;
+        cnt.textContent = `${d.length} items from ${sc} shop${sc!==1?'s':''}`;
+
+        el.innerHTML = d.map(p => {
+            const shop = shops.find(s=>s.id===p.shopId);
+            const sale = p.comparePrice && p.comparePrice>p.price;
+            const disc = sale ? Math.round((1-p.price/p.comparePrice)*100) : 0;
+            let ph = `<span class="price">¥${Math.round(p.price).toLocaleString()}</span>`;
+            if (sale) ph = `<span class="original-price">¥${Math.round(p.comparePrice).toLocaleString()}</span>
+                <span class="price">¥${Math.round(p.price).toLocaleString()}</span>
+                <span class="sale-badge">${disc}% OFF</span>`;
+            return `<div class="item-card ${!p.available?'sold-out':''}">
+                ${!p.available?'<div class="sold-out-badge">Sold Out</div>':''}
+                <img src="${p.image}" class="item-image" loading="lazy" alt="${p.title}" onerror="this.style.display='none'">
+                <div class="item-overlay">
+                    <div class="shop-badge">${shop?shop.name:''}</div>
+                    <div class="item-title">${p.title}</div>
+                    <div class="price-area">${ph}</div>
+                </div></div>`;
+        }).join('');
+    }
+
+    // ── Filter / Sort ──
+    function applyFilter() {
+        const v = document.getElementById('filterSelect').value;
+        filteredProducts = selectedShopIds.size>0 ? allProducts.filter(p=>selectedShopIds.has(p.shopId)) : [];
+        if (v==='stock') filteredProducts=filteredProducts.filter(p=>p.available);
+        else if (v==='sale') filteredProducts=filteredProducts.filter(p=>p.comparePrice&&p.comparePrice>p.price);
+        const sv = document.getElementById('sortSelect').value;
+        if (sv==='asc') filteredProducts.sort((a,b)=>a.price-b.price);
+        else if (sv==='desc') filteredProducts.sort((a,b)=>b.price-a.price);
+        renderProducts();
+    }
+    function applySort() {
+        const v = document.getElementById('sortSelect').value;
+        if (v==='asc') filteredProducts.sort((a,b)=>a.price-b.price);
+        else if (v==='desc') filteredProducts.sort((a,b)=>b.price-a.price);
+        else { applyFilter(); return; }
+        renderProducts();
+    }
+    function toggleSoldOut() { hideSoldOutItems=document.getElementById('hideSoldOut').checked; renderProducts(); }
+
+    // ── Scroll ──
+    window.addEventListener('scroll',()=>{
+        const t=document.getElementById('backToTop');
+        if(window.pageYOffset>300)t.classList.add('visible');else t.classList.remove('visible');
+    });
+    window.onclick=e=>{if(e.target.id==='modal')closeModal()};
+
+    // ── Go ──
+    init();
+    </script>
+</body>
+</html>
