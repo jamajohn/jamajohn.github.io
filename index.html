@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Vintage Finder</title>
-    <meta name="description" content="複数の古着屋・セレクトショップの商品を横断して一覧できるサイト">
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400&family=Inter:wght@300;400&display=swap');
         *{margin:0;padding:0;box-sizing:border-box}
@@ -30,7 +27,7 @@
         .btn-primary{width:100%;padding:1rem;background:#1A1816;color:#FFFEF9;border:none;font-weight:300;cursor:pointer;font-size:.813rem;letter-spacing:1px;text-transform:uppercase}
         .btn-primary:hover{background:#3A3836}
         .btn-secondary{width:100%;padding:1rem;background:transparent;color:#6B6866;border:1px solid #E8E6E0;font-weight:300;cursor:pointer;margin-top:.5rem;font-size:.813rem;letter-spacing:1px;text-transform:uppercase}
-        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(120%);background:#1A1816;color:#FFFEF9;padding:1rem 2rem;font-size:.8rem;font-weight:300;letter-spacing:.3px;z-index:2000;opacity:0;transition:all .4s cubic-bezier(.4,0,.2,1);max-width:420px;text-align:center;line-height:1.5}
+        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(120%);background:#1A1816;color:#FFFEF9;padding:1rem 2rem;font-size:.8rem;font-weight:300;z-index:2000;opacity:0;transition:all .4s cubic-bezier(.4,0,.2,1);max-width:420px;text-align:center;line-height:1.5}
         .toast.error{background:#4A2020}
         .toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
         .shops-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid #E8E6E0}
@@ -108,7 +105,6 @@
             <button class="add-btn" onclick="openModal()">+ Add Store</button>
         </div>
     </header>
-
     <main class="main">
         <div id="modal" class="modal">
             <div class="modal-content">
@@ -126,7 +122,6 @@
                 <button class="btn-secondary" onclick="closeModal()">Cancel</button>
             </div>
         </div>
-
         <div id="shopsSection" style="display:none">
             <div class="shops-header">
                 <div class="shops-title">Your Shops</div>
@@ -137,7 +132,6 @@
             </div>
             <div class="shops-grid" id="shops"></div>
         </div>
-
         <div class="filter-container" id="filterContainer" style="display:none">
             <div class="filter-section">
                 <div class="filter-group">
@@ -167,219 +161,270 @@
                 <div id="itemsCount" style="margin-left:auto;font-size:.75rem;color:#6B6866"></div>
             </div>
         </div>
-
         <div class="items-grid" id="items"></div>
-
         <div id="emptyState" class="empty-state">
             <div class="empty-state-icon">◇</div>
             <h3 class="empty-state-title">Begin Your Collection</h3>
             <p class="empty-state-text">Add your first vintage store to start browsing</p>
         </div>
     </main>
-
     <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
     <div id="toast" class="toast"></div>
 
-    <script>
-    // ── Store image: 1 store = 1 fixed image ──
-    const STORE_IMAGES = {};
-    let imgSeed = 200;
-    function storeImg(id) {
-        if (!STORE_IMAGES[id]) STORE_IMAGES[id] = `https://picsum.photos/seed/vf${imgSeed++}/600/600`;
-        return STORE_IMAGES[id];
+<script>
+// ================================================================
+// Store design themes - each store gets unique EC page styling
+// ================================================================
+const STORE_THEMES = [
+    { // Darby — Punk minimal: black bg, white text, Courier
+        bg:'#0A0A0A', text:'#E8E8E8', accent:'#FF4040', heading:'Courier New, monospace',
+        body:'Helvetica Neue, sans-serif', btnBg:'#FF4040', btnText:'#0A0A0A',
+        navBg:'#0A0A0A', navBorder:'#333', tagline:'Punk is not dead. Neither is good vintage.'
+    },
+    { // Siouxsie — Dark gothic elegance: deep purple, serif
+        bg:'#1A1020', text:'#D8D0E0', accent:'#C8A0D8', heading:'Georgia, serif',
+        body:'Garamond, serif', btnBg:'#C8A0D8', btnText:'#1A1020',
+        navBg:'#150C1A', navBorder:'#3A2848', tagline:'Curated darkness, exquisite taste.'
+    },
+    { // Patti — Poet bohemian: warm cream, literary
+        bg:'#FAF6F0', text:'#2C2824', accent:'#8B4513', heading:'Palatino, serif',
+        body:'Palatino, serif', btnBg:'#2C2824', btnText:'#FAF6F0',
+        navBg:'#FAF6F0', navBorder:'#D4C8B8', tagline:'Clothes for the ones who read.'
+    },
+    { // Extra — Mod 60s: bold blue + white
+        bg:'#FFFFFF', text:'#1A1A2E', accent:'#0055FF', heading:'Futura, Helvetica, sans-serif',
+        body:'Helvetica Neue, sans-serif', btnBg:'#0055FF', btnText:'#FFFFFF',
+        navBg:'#FFFFFF', navBorder:'#E0E0E0', tagline:'Sharp cuts. Clean lines.'
+    },
+    { // Extra — Earthy workwear
+        bg:'#F0EBE3', text:'#3B3228', accent:'#6B5B4E', heading:'Georgia, serif',
+        body:'system-ui, sans-serif', btnBg:'#3B3228', btnText:'#F0EBE3',
+        navBg:'#E8E0D4', navBorder:'#C8BCA8', tagline:'Built to last. Worn with pride.'
+    },
+    { // Extra — Neon streetwear
+        bg:'#111111', text:'#F0F0F0', accent:'#00FF88', heading:'Impact, sans-serif',
+        body:'Arial, sans-serif', btnBg:'#00FF88', btnText:'#111111',
+        navBg:'#111111', navBorder:'#333', tagline:'Drop culture. Archive heat.'
+    },
+];
+
+let themeIdx = 0;
+const storeThemeMap = {};
+function getTheme(shopId) {
+    if (!storeThemeMap[shopId]) {
+        storeThemeMap[shopId] = STORE_THEMES[themeIdx % STORE_THEMES.length];
+        themeIdx++;
+    }
+    return storeThemeMap[shopId];
+}
+
+// ================================================================
+// Unsplash image pools
+// ================================================================
+const UNSPLASH_POOLS = [
+    ["https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1548126032-079a0fb0099d?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=600&h=600&fit=crop"],
+    ["https://images.unsplash.com/photo-1558171813-4c088753af8f?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1603252109303-2751441dd157?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&h=600&fit=crop"],
+    ["https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1434389677669-e08b4cda3a32?w=600&h=600&fit=crop"],
+    ["https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1578587018452-892bacefd3f2?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1562157873-818bc0726f68?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&h=600&fit=crop"],
+    ["https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?w=600&h=600&fit=crop"],
+    ["https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=600&fit=crop",
+     "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&h=600&fit=crop"],
+];
+let poolIdx=0;
+const storePoolMap={};
+function getPool(sid){if(!storePoolMap[sid]){storePoolMap[sid]=UNSPLASH_POOLS[poolIdx%UNSPLASH_POOLS.length];poolIdx++}return storePoolMap[sid]}
+
+// ================================================================
+// Generate dummy EC product page HTML (opens in new tab)
+// ================================================================
+function buildProductPage(product, shop) {
+    const t = getTheme(shop.id);
+    const sale = product.comparePrice && product.comparePrice > product.price;
+    const disc = sale ? Math.round((1 - product.price / product.comparePrice) * 100) : 0;
+
+    let priceBlock = `<span style="font-size:2rem;font-weight:300">¥${product.price.toLocaleString()}</span>`;
+    if (sale) {
+        priceBlock = `<span style="text-decoration:line-through;opacity:.5;font-size:1rem;margin-right:.75rem">¥${product.comparePrice.toLocaleString()}</span>
+        <span style="font-size:2rem;font-weight:300">¥${product.price.toLocaleString()}</span>
+        <span style="background:${t.accent};color:${t.bg};padding:.25rem .75rem;font-size:.7rem;margin-left:.5rem;letter-spacing:.5px">${disc}% OFF</span>`;
     }
 
-    // ── Vintage item names pool ──
-    const ITEMS = [
-        "1960s US Army M-51 Field Jacket","Vintage Levi's 501 Big E Selvedge","70s Champion Reverse Weave Sweat",
-        "1940s USMC P-41 HBT Utility Jacket","Barbour Beaufort Waxed Jacket","80s Patagonia Snap-T Fleece",
-        "60s Pendleton Board Shirt","50s French Army M-47 Cargo Pants","90s Polo Ralph Lauren Sport Fleece",
-        "70s Lee 200 Westerner Jacket","80s L.L.Bean Norwegian Sweater","1930s French Indigo Linen Smock",
-        "80s Comme des Garçons Deconstructed Coat","50s US Army OG-107 Fatigue Pants","90s ISSEY MIYAKE Pleats Please Top",
-        "70s adidas Beckenbauer Track Jacket","40s French Moleskin Work Jacket","80s Yohji Yamamoto Pour Homme Blazer",
-        "90s The North Face Nuptse Down","60s Brooks Brothers OCBD Shirt","70s Wrangler Wrancher Dress Pants",
-        "50s Deadstock Swedish Army Pullover","90s Nike ACG Storm-FIT Jacket","1950s Buco J-100 Horsehide Riders",
-        "40s US Navy N-1 Deck Jacket","90s Stüssy Big Logo Hoodie","60s British Army DPM Combat Smock",
-        "70s Hanes Beefy-T Plain White","80s Filson Mackinaw Cruiser","2000s Maison Margiela Artisanal Blazer"
-    ];
-    const PRICES = [8800,12000,15400,18000,22000,24000,24200,24500,28000,32000,33000,35000,38000,42000,45000,48000,52000,55000,68000,72000,78000,85000,95000,120000,128000];
+    const statusColor = product.available ? '#4A8B4A' : '#8B4A4A';
+    const statusBg = product.available ? (t.bg === '#0A0A0A' || t.bg === '#111111' || t.bg === '#1A1020' ? '#1A2E1A' : '#E8F0E8') : (t.bg === '#0A0A0A' || t.bg === '#111111' || t.bg === '#1A1020' ? '#2E1A1A' : '#F0E0E0');
 
-    function genProducts(shopId, n) {
-        const arr = [], shuffled = [...ITEMS].sort(() => Math.random() - .5), img = storeImg(shopId);
-        for (let i = 0; i < Math.min(n, shuffled.length); i++) {
-            const pr = PRICES[Math.floor(Math.random()*PRICES.length)];
-            const sale = Math.random() < .18, sold = Math.random() < .15;
-            arr.push({
-                shopId, title: shuffled[i], price: pr,
-                comparePrice: sale ? Math.round(pr / (1 - (Math.random()*.2+.2))) : 0,
-                available: !sold, image: img, url: "#"
-            });
-        }
-        return arr;
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${product.title} — ${shop.name}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:${t.bg};color:${t.text};font-family:${t.body};font-weight:300;letter-spacing:.3px}
+nav{background:${t.navBg};border-bottom:1px solid ${t.navBorder};padding:1.5rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+.nav-logo{font-family:${t.heading};font-size:1.5rem;letter-spacing:1px}
+.nav-links{display:flex;gap:2rem;font-size:.8rem;letter-spacing:.5px;text-transform:uppercase;opacity:.7}
+.nav-links a{color:${t.text};text-decoration:none}
+.breadcrumb{max-width:1000px;margin:0 auto;padding:1.5rem 2rem;font-size:.75rem;opacity:.5}
+.product-wrap{max-width:1000px;margin:0 auto;padding:0 2rem 4rem;display:grid;grid-template-columns:1fr 1fr;gap:3rem}
+.product-img{aspect-ratio:1;overflow:hidden;background:${t.navBorder}}
+.product-img img{width:100%;height:100%;object-fit:cover}
+.product-info{padding:1rem 0}
+.product-title{font-family:${t.heading};font-size:2rem;line-height:1.3;margin-bottom:1.5rem}
+.product-price{margin-bottom:2rem}
+.product-status{display:inline-block;padding:.5rem 1.25rem;font-size:.72rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:2rem;background:${statusBg};color:${statusColor}}
+.buy-btn{display:block;width:100%;padding:1.125rem;background:${t.btnBg};color:${t.btnText};border:none;font-size:.875rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-weight:400;margin-bottom:1rem;font-family:${t.body}}
+.buy-btn:disabled{opacity:.4;cursor:not-allowed}
+.desc{font-size:.85rem;line-height:1.8;opacity:.7;border-top:1px solid ${t.navBorder};padding-top:1.5rem;margin-top:1rem}
+.footer{border-top:1px solid ${t.navBorder};padding:2rem;text-align:center;font-size:.72rem;opacity:.4;margin-top:2rem}
+.tagline{font-style:italic;font-size:.8rem;opacity:.5;margin-bottom:2rem}
+@media(max-width:768px){.product-wrap{grid-template-columns:1fr;gap:2rem}.nav-links{display:none}}
+</style></head><body>
+<nav><div class="nav-logo">${shop.name}</div><div class="nav-links"><a href="#">All</a><a href="#">Outerwear</a><a href="#">Tops</a><a href="#">Bottoms</a></div></nav>
+<div class="breadcrumb">Home / All / ${product.title}</div>
+<div class="product-wrap">
+<div class="product-img"><img src="${product.image}" alt="${product.title}"></div>
+<div class="product-info">
+<p class="tagline">${t.tagline}</p>
+<h1 class="product-title">${product.title}</h1>
+<div class="product-price">${priceBlock}</div>
+<div class="product-status">${product.available ? 'In Stock' : 'Sold Out'}</div>
+<button class="buy-btn" ${!product.available?'disabled':''}>${product.available ? 'Add to Cart' : 'Sold Out'}</button>
+<div class="desc">This is a demo product page for <strong>${shop.name}</strong> (${shop.url}).<br><br>In the real Vintage Finder, this button would take you directly to the shop owner's EC site where you can purchase the item.</div>
+</div></div>
+<div class="footer">&copy; ${shop.name} — ${shop.url} · All rights reserved (demo)</div>
+</body></html>`;
+}
+
+function openProduct(pid) {
+    const p = allProducts.find(x => x.id === pid);
+    if (!p) return;
+    const shop = shops.find(s => s.id === p.shopId);
+    if (!shop) return;
+    const html = buildProductPage(p, shop);
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+}
+
+// ================================================================
+// Item generation
+// ================================================================
+const ITEMS=["1960s US Army M-51 Field Jacket","Vintage Levi's 501 Big E Selvedge","70s Champion Reverse Weave Sweat","1940s USMC P-41 HBT Utility Jacket","Barbour Beaufort Waxed Jacket","80s Patagonia Snap-T Fleece","60s Pendleton Board Shirt","50s French Army M-47 Cargo Pants","90s Polo Ralph Lauren Sport Fleece","70s Lee 200 Westerner Jacket","80s L.L.Bean Norwegian Sweater","1930s French Indigo Linen Smock","80s Comme des Garçons Deconstructed Coat","50s US Army OG-107 Fatigue Pants","90s ISSEY MIYAKE Pleats Please Top","70s adidas Beckenbauer Track Jacket","40s French Moleskin Work Jacket","80s Yohji Yamamoto Pour Homme Blazer","90s The North Face Nuptse Down","60s Brooks Brothers OCBD Shirt","70s Wrangler Wrancher Dress Pants","50s Deadstock Swedish Army Pullover","90s Nike ACG Storm-FIT Jacket","1950s Buco J-100 Horsehide Riders","40s US Navy N-1 Deck Jacket","90s Stüssy Big Logo Hoodie","60s British Army DPM Combat Smock","70s Hanes Beefy-T Plain White","80s Filson Mackinaw Cruiser","2000s Maison Margiela Artisanal Blazer"];
+const PRICES=[8800,12000,15400,18000,22000,24000,24200,24500,28000,32000,33000,35000,38000,42000,45000,48000,52000,55000,68000,72000,78000,85000,95000,120000,128000];
+let pidC=1;
+function genProducts(sid,n){
+    const arr=[],sh=[...ITEMS].sort(()=>Math.random()-.5),pool=getPool(sid);
+    for(let i=0;i<Math.min(n,sh.length);i++){
+        const pr=PRICES[Math.floor(Math.random()*PRICES.length)];
+        const sale=Math.random()<.18,sold=Math.random()<.15;
+        arr.push({id:pidC++,shopId:sid,title:sh[i],price:pr,comparePrice:sale?Math.round(pr/(1-(Math.random()*.2+.2))):0,available:!sold,image:pool[i%pool.length]});
     }
+    return arr;
+}
 
-    // ── State ──
-    let shops = [], allProducts = [], filteredProducts = [], selectedShopIds = new Set(), hideSoldOutItems = false, nextId = 10;
+// ================================================================
+// State
+// ================================================================
+let shops=[],allProducts=[],filteredProducts=[],selectedShopIds=new Set(),hideSoldOutItems=false,nextId=10;
 
-    // ── Initial 3 shops: 60-80s trio first names ──
-    function init() {
-        [{id:1,name:"Darby Store",url:"darbystore.com"},{id:2,name:"Siouxsie Store",url:"siouxsiestore.com"},{id:3,name:"Patti Store",url:"pattistore.com"}]
-        .forEach(s => {
-            shops.push({...s, platform:"Shopify"});
-            selectedShopIds.add(s.id);
-            allProducts.push(...genProducts(s.id, 12));
-        });
-        filteredProducts = [...allProducts];
-        render();
-    }
+function init(){
+    [{id:1,name:"Darby Store",url:"darbystore.com"},{id:2,name:"Siouxsie Store",url:"siouxsiestore.com"},{id:3,name:"Patti Store",url:"pattistore.com"}]
+    .forEach(s=>{shops.push({...s,platform:"Shopify"});selectedShopIds.add(s.id);allProducts.push(...genProducts(s.id,12))});
+    filteredProducts=[...allProducts];render();
+}
 
-    // ── Toast ──
-    let tt;
-    function toast(msg, err) {
-        const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.className = 'toast' + (err?' error':'') + ' visible';
-        clearTimeout(tt);
-        tt = setTimeout(() => t.classList.remove('visible'), 3200);
-    }
+// ── Toast ──
+let tt;function toast(m,e){const t=document.getElementById('toast');t.textContent=m;t.className='toast'+(e?' error':'')+' visible';clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('visible'),3200)}
 
-    // ── Modal ──
-    function openModal() {
-        document.getElementById('modal').classList.add('active');
-        const inp = document.getElementById('storeNameInput');
-        inp.value = '';
-        document.getElementById('storeUrlDisplay').value = '';
-        setTimeout(() => inp.focus(), 100);
-    }
-    function closeModal() { document.getElementById('modal').classList.remove('active'); }
+// ── Modal ──
+function openModal(){document.getElementById('modal').classList.add('active');const i=document.getElementById('storeNameInput');i.value='';document.getElementById('storeUrlDisplay').value='';setTimeout(()=>i.focus(),100)}
+function closeModal(){document.getElementById('modal').classList.remove('active')}
+document.addEventListener('input',e=>{if(e.target.id!=='storeNameInput')return;const s=e.target.value.trim().toLowerCase().replace(/[^a-z0-9]+/g,'');document.getElementById('storeUrlDisplay').value=s?s+'.com':''});
 
-    document.addEventListener('input', e => {
-        if (e.target.id !== 'storeNameInput') return;
-        const v = e.target.value.trim();
-        const slug = v.toLowerCase().replace(/[^a-z0-9]+/g,'');
-        document.getElementById('storeUrlDisplay').value = slug ? slug + '.com' : '';
-    });
+function addStore(){
+    const name=document.getElementById('storeNameInput').value.trim();
+    if(!name){toast('Enter a store name to continue.',true);return}
+    if(!/[a-zA-Z]/.test(name)){toast('Store name needs at least one letter.',true);return}
+    const slug=name.toLowerCase().replace(/[^a-z0-9]+/g,'');
+    if(!slug){toast("Hmm, couldn't make a URL from that name.",true);return}
+    const url=slug+'.com';
+    if(shops.some(s=>s.url===url)){toast('That store is already in your list.',true);return}
+    const id=nextId++;
+    shops.push({id,name,url,platform:'Shopify'});selectedShopIds.add(id);
+    const prods=genProducts(id,10+Math.floor(Math.random()*6));
+    allProducts.push(...prods);filteredProducts=allProducts.filter(p=>selectedShopIds.has(p.shopId));
+    closeModal();render();toast(`${name} added — ${prods.length} items loaded.`);
+}
+function deleteShop(ev,id){ev.stopPropagation();const s=shops.find(x=>x.id===id);shops=shops.filter(x=>x.id!==id);allProducts=allProducts.filter(p=>p.shopId!==id);selectedShopIds.delete(id);filteredProducts=selectedShopIds.size>0?allProducts.filter(p=>selectedShopIds.has(p.shopId)):[];render();if(s)toast(`${s.name} removed.`)}
 
-    function addStore() {
-        const name = document.getElementById('storeNameInput').value.trim();
-        if (!name) { toast('Enter a store name to continue.', true); return; }
-        if (!/[a-zA-Z]/.test(name)) { toast('Store name needs at least one letter.', true); return; }
-        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g,'');
-        if (!slug) { toast('Hmm, couldn\'t make a URL from that name.', true); return; }
-        const url = slug + '.com';
-        if (shops.some(s => s.url === url)) { toast('That store is already in your list.', true); return; }
+// ── Render ──
+function render(){
+    const has=shops.length>0;
+    document.getElementById('emptyState').style.display=has?'none':'block';
+    document.getElementById('shopsSection').style.display=has?'block':'none';
+    document.getElementById('filterContainer').style.display=has&&allProducts.length>0?'block':'none';
+    document.getElementById('shops').innerHTML=shops.map(s=>{
+        const sp=allProducts.filter(p=>p.shopId===s.id),inS=sp.filter(p=>p.available).length,sold=sp.length-inS;
+        const avg=sp.length>0?sp.reduce((a,p)=>a+p.price,0)/sp.length:0;const sel=selectedShopIds.has(s.id);
+        return `<div class="shop-card ${sel?'selected':''}" onclick="toggleShop(${s.id})">
+            <button class="shop-delete" onclick="deleteShop(event,${s.id})" title="Remove">✕</button>
+            <div class="shop-card-name">${s.name}</div>
+            <div class="shop-card-url">${s.url} <span style="opacity:.5">· ${s.platform}</span></div>
+            <div class="shop-card-stats">
+                <div><span class="shop-stat-value">${inS}</span> in stock</div>
+                <div><span class="shop-stat-value" style="opacity:.5">${sold}</span> sold</div>
+                <div>avg <span class="shop-stat-value">¥${Math.round(avg).toLocaleString()}</span></div>
+            </div></div>`;
+    }).join('');
+    renderProducts();
+}
+function toggleShop(id){if(selectedShopIds.has(id))selectedShopIds.delete(id);else selectedShopIds.add(id);filteredProducts=selectedShopIds.size>0?allProducts.filter(p=>selectedShopIds.has(p.shopId)):[];render()}
+function clearSelection(){selectedShopIds.clear();filteredProducts=[];render()}
+function selectAll(){shops.forEach(s=>selectedShopIds.add(s.id));filteredProducts=[...allProducts];render()}
 
-        const id = nextId++;
-        shops.push({id, name, url, platform:'Shopify'});
-        selectedShopIds.add(id);
-        const prods = genProducts(id, 10 + Math.floor(Math.random()*6));
-        allProducts.push(...prods);
-        filteredProducts = allProducts.filter(p => selectedShopIds.has(p.shopId));
-        closeModal(); render();
-        toast(`${name} added — ${prods.length} items loaded.`);
-    }
+function renderProducts(){
+    const el=document.getElementById('items'),cnt=document.getElementById('itemsCount');
+    const q=(document.getElementById('searchInput')?.value||'').toLowerCase().trim();
+    let d=[...filteredProducts];
+    if(hideSoldOutItems)d=d.filter(p=>p.available);
+    if(q)d=d.filter(p=>p.title.toLowerCase().includes(q));
+    const sc=shops.filter(s=>selectedShopIds.has(s.id)).length;
+    cnt.textContent=`${d.length} items from ${sc} shop${sc!==1?'s':''}`;
+    el.innerHTML=d.map(p=>{
+        const shop=shops.find(s=>s.id===p.shopId);
+        const sale=p.comparePrice&&p.comparePrice>p.price;
+        const disc=sale?Math.round((1-p.price/p.comparePrice)*100):0;
+        let ph=`<span class="price">¥${Math.round(p.price).toLocaleString()}</span>`;
+        if(sale)ph=`<span class="original-price">¥${Math.round(p.comparePrice).toLocaleString()}</span><span class="price">¥${Math.round(p.price).toLocaleString()}</span><span class="sale-badge">${disc}% OFF</span>`;
+        return `<div class="item-card ${!p.available?'sold-out':''}" onclick="openProduct(${p.id})">
+            ${!p.available?'<div class="sold-out-badge">Sold Out</div>':''}
+            <img src="${p.image}" class="item-image" loading="lazy" alt="${p.title}" onerror="this.style.display='none'">
+            <div class="item-overlay"><div class="shop-badge">${shop?shop.name:''}</div><div class="item-title">${p.title}</div><div class="price-area">${ph}</div></div></div>`;
+    }).join('');
+}
 
-    function deleteShop(ev, id) {
-        ev.stopPropagation();
-        const s = shops.find(x => x.id===id);
-        shops = shops.filter(x => x.id!==id);
-        allProducts = allProducts.filter(p => p.shopId!==id);
-        selectedShopIds.delete(id);
-        filteredProducts = selectedShopIds.size>0 ? allProducts.filter(p=>selectedShopIds.has(p.shopId)) : [];
-        render();
-        if (s) toast(`${s.name} removed.`);
-    }
+// ── Filter/Sort ──
+function applyFilter(){const v=document.getElementById('filterSelect').value;filteredProducts=selectedShopIds.size>0?allProducts.filter(p=>selectedShopIds.has(p.shopId)):[];if(v==='stock')filteredProducts=filteredProducts.filter(p=>p.available);else if(v==='sale')filteredProducts=filteredProducts.filter(p=>p.comparePrice&&p.comparePrice>p.price);const sv=document.getElementById('sortSelect').value;if(sv==='asc')filteredProducts.sort((a,b)=>a.price-b.price);else if(sv==='desc')filteredProducts.sort((a,b)=>b.price-a.price);renderProducts()}
+function applySort(){const v=document.getElementById('sortSelect').value;if(v==='asc')filteredProducts.sort((a,b)=>a.price-b.price);else if(v==='desc')filteredProducts.sort((a,b)=>b.price-a.price);else{applyFilter();return}renderProducts()}
+function toggleSoldOut(){hideSoldOutItems=document.getElementById('hideSoldOut').checked;renderProducts()}
 
-    // ── Render ──
-    function render() {
-        const has = shops.length > 0;
-        document.getElementById('emptyState').style.display = has?'none':'block';
-        document.getElementById('shopsSection').style.display = has?'block':'none';
-        document.getElementById('filterContainer').style.display = has && allProducts.length>0?'block':'none';
-
-        document.getElementById('shops').innerHTML = shops.map(s => {
-            const sp = allProducts.filter(p=>p.shopId===s.id);
-            const inS = sp.filter(p=>p.available).length, sold = sp.length-inS;
-            const avg = sp.length>0 ? sp.reduce((a,p)=>a+p.price,0)/sp.length : 0;
-            const sel = selectedShopIds.has(s.id);
-            return `<div class="shop-card ${sel?'selected':''}" onclick="toggleShop(${s.id})">
-                <button class="shop-delete" onclick="deleteShop(event,${s.id})" title="Remove">✕</button>
-                <div class="shop-card-name">${s.name}</div>
-                <div class="shop-card-url">${s.url} <span style="opacity:.5">· ${s.platform}</span></div>
-                <div class="shop-card-stats">
-                    <div><span class="shop-stat-value">${inS}</span> in stock</div>
-                    <div><span class="shop-stat-value" style="opacity:.5">${sold}</span> sold</div>
-                    <div>avg <span class="shop-stat-value">¥${Math.round(avg).toLocaleString()}</span></div>
-                </div></div>`;
-        }).join('');
-        renderProducts();
-    }
-
-    function toggleShop(id) {
-        if (selectedShopIds.has(id)) selectedShopIds.delete(id); else selectedShopIds.add(id);
-        filteredProducts = selectedShopIds.size>0 ? allProducts.filter(p=>selectedShopIds.has(p.shopId)) : [];
-        render();
-    }
-    function clearSelection() { selectedShopIds.clear(); filteredProducts=[]; render(); }
-    function selectAll() { shops.forEach(s=>selectedShopIds.add(s.id)); filteredProducts=[...allProducts]; render(); }
-
-    function renderProducts() {
-        const el = document.getElementById('items'), cnt = document.getElementById('itemsCount');
-        const q = (document.getElementById('searchInput')?.value||'').toLowerCase().trim();
-        let d = [...filteredProducts];
-        if (hideSoldOutItems) d = d.filter(p=>p.available);
-        if (q) d = d.filter(p=>p.title.toLowerCase().includes(q));
-        const sc = shops.filter(s=>selectedShopIds.has(s.id)).length;
-        cnt.textContent = `${d.length} items from ${sc} shop${sc!==1?'s':''}`;
-
-        el.innerHTML = d.map(p => {
-            const shop = shops.find(s=>s.id===p.shopId);
-            const sale = p.comparePrice && p.comparePrice>p.price;
-            const disc = sale ? Math.round((1-p.price/p.comparePrice)*100) : 0;
-            let ph = `<span class="price">¥${Math.round(p.price).toLocaleString()}</span>`;
-            if (sale) ph = `<span class="original-price">¥${Math.round(p.comparePrice).toLocaleString()}</span>
-                <span class="price">¥${Math.round(p.price).toLocaleString()}</span>
-                <span class="sale-badge">${disc}% OFF</span>`;
-            return `<div class="item-card ${!p.available?'sold-out':''}">
-                ${!p.available?'<div class="sold-out-badge">Sold Out</div>':''}
-                <img src="${p.image}" class="item-image" loading="lazy" alt="${p.title}" onerror="this.style.display='none'">
-                <div class="item-overlay">
-                    <div class="shop-badge">${shop?shop.name:''}</div>
-                    <div class="item-title">${p.title}</div>
-                    <div class="price-area">${ph}</div>
-                </div></div>`;
-        }).join('');
-    }
-
-    // ── Filter / Sort ──
-    function applyFilter() {
-        const v = document.getElementById('filterSelect').value;
-        filteredProducts = selectedShopIds.size>0 ? allProducts.filter(p=>selectedShopIds.has(p.shopId)) : [];
-        if (v==='stock') filteredProducts=filteredProducts.filter(p=>p.available);
-        else if (v==='sale') filteredProducts=filteredProducts.filter(p=>p.comparePrice&&p.comparePrice>p.price);
-        const sv = document.getElementById('sortSelect').value;
-        if (sv==='asc') filteredProducts.sort((a,b)=>a.price-b.price);
-        else if (sv==='desc') filteredProducts.sort((a,b)=>b.price-a.price);
-        renderProducts();
-    }
-    function applySort() {
-        const v = document.getElementById('sortSelect').value;
-        if (v==='asc') filteredProducts.sort((a,b)=>a.price-b.price);
-        else if (v==='desc') filteredProducts.sort((a,b)=>b.price-a.price);
-        else { applyFilter(); return; }
-        renderProducts();
-    }
-    function toggleSoldOut() { hideSoldOutItems=document.getElementById('hideSoldOut').checked; renderProducts(); }
-
-    // ── Scroll ──
-    window.addEventListener('scroll',()=>{
-        const t=document.getElementById('backToTop');
-        if(window.pageYOffset>300)t.classList.add('visible');else t.classList.remove('visible');
-    });
-    window.onclick=e=>{if(e.target.id==='modal')closeModal()};
-
-    // ── Go ──
-    init();
-    </script>
+window.addEventListener('scroll',()=>{const t=document.getElementById('backToTop');if(window.pageYOffset>300)t.classList.add('visible');else t.classList.remove('visible')});
+window.onclick=e=>{if(e.target.id==='modal')closeModal()};
+init();
+</script>
 </body>
 </html>
